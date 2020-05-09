@@ -1,24 +1,33 @@
-const db = require('mongoose')
 const Model = require('./model')
-
-db.Promise = global.Promise
-db.connect(
-  'mongodb+srv://Fad:UEXjZMa844bbDQ2G@cluster0-dwoa7.gcp.mongodb.net/test?retryWrites=true&w=majority',
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  }
-)
-console.log('[db] conectada con exito')
 
 function addMessage(message) {
   const myMessage = new Model(message)
   myMessage.save()
 }
 
-async function getMessages() {
-  const messages = await Model.find()
-  return messages
+async function getMessages(filterChat) {
+  return new Promise((resolve, reject) => {
+    if (filterChat === null) {
+      reject('No se ha ingresado un Chat')
+      return false
+    }
+
+    let filter = {}
+
+    filter = {
+      chat: filterChat,
+    }
+
+    Model.find(filter)
+      .populate('user')
+      .exec((error, populated) => {
+        if (error) {
+          reject(error)
+          return false
+        }
+        resolve(populated)
+      })
+  })
 }
 
 async function updateText(id, message) {
@@ -28,8 +37,17 @@ async function updateText(id, message) {
   return newMessage
 }
 
+function removeMessage(id) {
+  console.log(id)
+
+  return Model.deleteOne({
+    _id: id,
+  })
+}
+
 module.exports = {
   add: addMessage,
   list: getMessages,
   updateText: updateText,
+  remove: removeMessage,
 }
